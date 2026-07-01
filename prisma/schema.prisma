@@ -1,0 +1,401 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for Minecraft players
+model User {
+  id                String    @id @default(cuid())
+  minecraftUsername String    @unique
+  uuid              String    @unique
+  email             String?   @unique
+  head              String?   // URL to player head
+  skin              String?   // URL to player skin
+  discordId         String?   @unique
+  discordUsername   String?
+  coins             Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  purchases         Purchase[]
+  cart              CartItem[]
+  orders            Order[]
+  rank              UserRank?
+  inventory         Inventory[]
+  profile           UserProfile?
+  settings          UserSettings?
+  
+  @@index([minecraftUsername])
+  @@index([uuid])
+}
+
+// User profile information
+model UserProfile {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio               String?   @db.Text
+  joinDate          DateTime?
+  totalSpent        Float     @default(0)
+  totalOrders       Int       @default(0)
+  level             Int       @default(1)
+  badges            String[]  @default([])
+  updatedAt         DateTime  @updatedAt
+}
+
+// User settings
+model UserSettings {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailNotifications Boolean  @default(true)
+  discordNotifications Boolean @default(true)
+  publicProfile     Boolean   @default(true)
+  twoFactorEnabled  Boolean   @default(false)
+  updatedAt         DateTime  @updatedAt
+}
+
+// Minecraft ranks
+model Rank {
+  id                String    @id @default(cuid())
+  name              String    @unique
+  displayName       String
+  description       String?   @db.Text
+  price             Float
+  color             String    @default("#9d4edd")
+  permissions       String[]  @default([])
+  isActive          Boolean   @default(true)
+  order             Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  userRanks         UserRank[]
+  products          Product[]
+  
+  @@index([isActive])
+}
+
+// User rank assignment
+model UserRank {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rankId            String
+  rank              Rank      @relation(fields: [rankId], references: [id], onDelete: Cascade)
+  expiresAt         DateTime?
+  isActive          Boolean   @default(true)
+  assignedAt        DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@index([userId])
+  @@index([rankId])
+}
+
+// Product categories
+model Category {
+  id                String    @id @default(cuid())
+  name              String    @unique
+  displayName       String
+  description       String?   @db.Text
+  icon              String?
+  order             Int       @default(0)
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  products          Product[]
+  
+  @@index([isActive])
+}
+
+// Store products
+model Product {
+  id                String    @id @default(cuid())
+  name              String
+  slug              String    @unique
+  description       String?   @db.Text
+  price             Float
+  originalPrice     Float?
+  discount          Int       @default(0) // percentage
+  image             String?
+  category          Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId        String
+  rank              Rank?     @relation(fields: [rankId], references: [id], onDelete: SetNull)
+  rankId            String?
+  quantity          Int       @default(-1) // -1 for unlimited
+  isActive          Boolean   @default(true)
+  isFeatured        Boolean   @default(false)
+  order             Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  cartItems         CartItem[]
+  orderItems        OrderItem[]
+  
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([slug])
+}
+
+// Shopping cart
+model CartItem {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId         String
+  product           Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity          Int       @default(1)
+  addedAt           DateTime  @default(now())
+  
+  @@unique([userId, productId])
+  @@index([userId])
+}
+
+// Orders
+model Order {
+  id                String    @id @default(cuid())
+  orderNumber       String    @unique
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items             OrderItem[]
+  subtotal          Float
+  tax               Float     @default(0)
+  total             Float
+  couponCode        String?
+  coupon            Coupon?   @relation(fields: [couponCode], references: [code], onDelete: SetNull)
+  status            OrderStatus @default(PENDING)
+  paymentMethod     PaymentMethod?
+  paymentId         String?   // Razorpay payment ID
+  invoiceUrl        String?
+  notes             String?   @db.Text
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+  @@index([paymentId])
+}
+
+// Order items
+model OrderItem {
+  id                String    @id @default(cuid())
+  orderId           String
+  order             Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId         String
+  product           Product   @relation(fields: [productId], references: [id])
+  quantity          Int
+  price             Float     // Price at time of purchase
+  
+  @@index([orderId])
+}
+
+// Coupons
+model Coupon {
+  code              String    @id
+  description       String?   @db.Text
+  discountType      DiscountType @default(PERCENTAGE) // PERCENTAGE or FIXED
+  discountValue     Float
+  maxUses           Int?      // null for unlimited
+  usedCount         Int       @default(0)
+  minOrderAmount    Float     @default(0)
+  isActive          Boolean   @default(true)
+  startsAt          DateTime?
+  expiresAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  orders            Order[]
+  
+  @@index([isActive])
+}
+
+// User inventory (owned cosmetics, keys, etc)
+model Inventory {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemType          String    // cosmetic, key, crate, pet, tag, etc
+  itemId            String
+  itemName          String
+  quantity          Int       @default(1)
+  expiresAt         DateTime?
+  isActive          Boolean   @default(true)
+  acquiredAt        DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@index([userId])
+  @@index([itemType])
+}
+
+// Admin users
+model Admin {
+  id                String    @id @default(cuid())
+  username          String    @unique
+  email             String    @unique
+  passwordHash      String
+  role              AdminRole @default(MODERATOR)
+  permissions       String[]  @default([])
+  isActive          Boolean   @default(true)
+  lastLoginAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  logs              AuditLog[]
+  
+  @@index([role])
+}
+
+// Audit logs
+model AuditLog {
+  id                String    @id @default(cuid())
+  adminId           String
+  admin             Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action            String
+  target            String?   // what was modified
+  details           String?   @db.Text
+  ipAddress         String?
+  createdAt         DateTime  @default(now())
+  
+  @@index([adminId])
+  @@index([createdAt])
+}
+
+// Team members
+model TeamMember {
+  id                String    @id @default(cuid())
+  minecraftUsername String    @unique
+  discordUsername   String    @unique
+  displayName       String
+  role              TeamRole
+  description       String?   @db.Text
+  photoUrl          String?
+  joinDate          DateTime
+  socialLinks       String[]  @default([]) // JSON array of social links
+  isActive          Boolean   @default(true)
+  order             Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@index([role])
+  @@index([isActive])
+}
+
+// Partners
+model Partner {
+  id                String    @id @default(cuid())
+  name              String    @unique
+  logoUrl           String
+  description       String?   @db.Text
+  websiteUrl        String?
+  isActive          Boolean   @default(true)
+  order             Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@index([isActive])
+}
+
+// News/Blog posts
+model News {
+  id                String    @id @default(cuid())
+  title             String
+  slug              String    @unique
+  content           String    @db.Text
+  excerpt           String?   @db.Text
+  imageUrl          String?
+  author            String
+  isPublished       Boolean   @default(false)
+  publishedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@index([isPublished])
+  @@index([publishedAt])
+}
+
+// Announcements
+model Announcement {
+  id                String    @id @default(cuid())
+  title             String
+  content           String    @db.Text
+  type              AnnouncementType @default(INFO)
+  isActive          Boolean   @default(true)
+  startsAt          DateTime  @default(now())
+  expiresAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@index([isActive])
+}
+
+// Website settings
+model Setting {
+  key               String    @id
+  value             String    @db.Text
+  description       String?   @db.Text
+  updatedAt         DateTime  @updatedAt
+}
+
+// Enums
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  UPI
+  GOOGLE_PAY
+  PHONE_PE
+  PAYTM
+  CREDIT_CARD
+  DEBIT_CARD
+  NET_BANKING
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  MODERATOR
+  SUPPORT
+}
+
+enum TeamRole {
+  OWNER
+  CO_OWNER
+  DEVELOPER
+  SERVER_ADMIN
+  DISCORD_ADMIN
+  MODERATOR
+  STAFF
+  YOUTUBER
+  BUILDER
+  DESIGNER
+}
+
+enum AnnouncementType {
+  INFO
+  WARNING
+  SUCCESS
+  ERROR
+}
