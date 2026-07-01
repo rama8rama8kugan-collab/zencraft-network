@@ -1,0 +1,53 @@
+{
+  "name": "zencraft-network",
+  "version": "1.0.0",
+  "description": "ZenCraft Network - Premium Tamil Minecraft Server Website",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "seed": "node scripts/seed.js"
+  },
+  "dependencies": {
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.3.3",
+    "tailwindcss": "^3.4.1",
+    "framer-motion": "^10.16.16",
+    "axios": "^1.6.2",
+    "prisma": "^5.7.0",
+    "@prisma/client": "^5.7.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.1.2",
+    "dotenv": "^16.3.1",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "zod": "^3.22.4",
+    "qrcode.react": "^1.0.1",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.1",
+    "react-hot-toast": "^2.4.1",
+    "zustand": "^4.4.1",
+    "next-seo": "^6.2.0",
+    "stripe": "^14.7.0",
+    "razorpay": "^2.9.1",
+    "discord.js": "^14.14.0",
+    "axios-cache-adapter": "^2.7.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "^15.0.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32"
+  }
+}
