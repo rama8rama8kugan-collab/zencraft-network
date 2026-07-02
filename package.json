@@ -37,7 +37,8 @@
     "stripe": "^14.7.0",
     "razorpay": "^2.9.1",
     "discord.js": "^14.14.0",
-    "axios-cache-adapter": "^2.7.3"
+    "axios-cache-adapter": "^2.7.3",
+    "nodemailer": "^6.9.7"
   },
   "devDependencies": {
     "@types/node": "^20.10.5",
