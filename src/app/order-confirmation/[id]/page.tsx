@@ -6,7 +6,7 @@ import Container from '@/components/Container';
 import SectionTitle from '@/components/SectionTitle';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import QRCode from 'qrcode.react';
+import QRCode from 'qrcode';
 import jsPDF from 'jspdf';
 
 export default function OrderConfirmation() {
@@ -14,10 +14,26 @@ export default function OrderConfirmation() {
   const router = useRouter();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [qrDataUrl, setQrDataUrl] = useState<string>('');
 
   useEffect(() => {
     fetchOrder();
   }, [params]);
+
+  useEffect(() => {
+    if (order?.invoiceUrl) {
+      generateQR();
+    }
+  }, [order]);
+
+  const generateQR = async () => {
+    try {
+      const dataUrl = await QRCode.toDataURL(order.invoiceUrl);
+      setQrDataUrl(dataUrl);
+    } catch (error) {
+      console.error('Failed to generate QR code:', error);
+    }
+  };
 
   const fetchOrder = async () => {
     try {
@@ -133,9 +149,9 @@ export default function OrderConfirmation() {
           </div>
         </div>
 
-        {order.invoiceUrl && (
+        {order.invoiceUrl && qrDataUrl && (
           <div className="text-center mb-8">
-            <QRCode value={order.invoiceUrl} size={200} className="mx-auto mb-4" />
+            <img src={qrDataUrl} alt="Invoice QR Code" className="mx-auto mb-4" style={{ width: '200px', height: '200px' }} />
             <p className="text-sm text-gray-400">Scan to view invoice online</p>
           </div>
         )}
