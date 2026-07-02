@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Container from '@/components/Container';
 import SectionTitle from '@/components/SectionTitle';
 import ProductCard from '@/components/ProductCard';
@@ -32,12 +32,7 @@ export default function Store() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Fetch products from API
-    fetchProducts();
-  }, [selectedCategory]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       const query = selectedCategory !== 'all' ? `?category=${selectedCategory}` : '';
@@ -49,7 +44,11 @@ export default function Store() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   return (
     <Container className="py-20">
@@ -69,7 +68,7 @@ export default function Store() {
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-12"
         >
           {products.length > 0 ? (
-            products.map((product, index) => (
+            products.map((product) => (
               <motion.div key={product.id} variants={itemVariants}>
                 <ProductCard product={product} />
               </motion.div>

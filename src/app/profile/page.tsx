@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Container from '@/components/Container';
 import SectionTitle from '@/components/SectionTitle';
@@ -13,11 +13,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'purchases' | 'inventory' | 'settings'>('overview');
 
-  useEffect(() => {
-    fetchUserProfile();
-  }, []);
-
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     try {
       const response = await fetch('/api/users/me');
       if (!response.ok) {
@@ -32,7 +28,11 @@ export default function Profile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, [fetchUserProfile]);
 
   if (loading) {
     return (
@@ -179,11 +179,7 @@ function OverviewTab({ user }: { user: any }) {
 function PurchasesTab({ userId }: { userId: string }) {
   const [purchases, setPurchases] = useState<any[]>([]);
 
-  useEffect(() => {
-    fetchPurchases();
-  }, []);
-
-  const fetchPurchases = async () => {
+  const fetchPurchases = useCallback(async () => {
     try {
       const response = await fetch(`/api/orders?userId=${userId}`);
       const data = await response.json();
@@ -191,7 +187,11 @@ function PurchasesTab({ userId }: { userId: string }) {
     } catch (error) {
       console.error('Failed to fetch purchases:', error);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    fetchPurchases();
+  }, [fetchPurchases]);
 
   if (purchases.length === 0) {
     return <p className="text-gray-400">No purchases yet</p>;
@@ -222,11 +222,7 @@ function PurchasesTab({ userId }: { userId: string }) {
 function InventoryTab({ userId }: { userId: string }) {
   const [inventory, setInventory] = useState<any[]>([]);
 
-  useEffect(() => {
-    fetchInventory();
-  }, []);
-
-  const fetchInventory = async () => {
+  const fetchInventory = useCallback(async () => {
     try {
       const response = await fetch(`/api/inventory?userId=${userId}`);
       const data = await response.json();
@@ -234,7 +230,11 @@ function InventoryTab({ userId }: { userId: string }) {
     } catch (error) {
       console.error('Failed to fetch inventory:', error);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    fetchInventory();
+  }, [fetchInventory]);
 
   if (inventory.length === 0) {
     return <p className="text-gray-400">Your inventory is empty</p>;

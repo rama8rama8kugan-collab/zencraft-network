@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Container from '@/components/Container';
 import SectionTitle from '@/components/SectionTitle';
@@ -19,26 +19,7 @@ export default function Checkout() {
   const [paymentInitiated, setPaymentInitiated] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
 
-  useEffect(() => {
-    fetchOrderData();
-  }, []);
-
-  useEffect(() => {
-    if (paymentInitiated && order) {
-      generateQR();
-    }
-  }, [paymentInitiated, order]);
-
-  const generateQR = async () => {
-    try {
-      const dataUrl = await QRCode.toDataURL(`razorpay:${order.id}`);
-      setQrDataUrl(dataUrl);
-    } catch (error) {
-      console.error('Failed to generate QR code:', error);
-    }
-  };
-
-  const fetchOrderData = async () => {
+  const fetchOrderData = useCallback(async () => {
     try {
       const response = await fetch('/api/checkout/summary');
       const data = await response.json();
@@ -50,7 +31,26 @@ export default function Checkout() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  const generateQR = useCallback(async (orderId: string) => {
+    try {
+      const dataUrl = await QRCode.toDataURL(`razorpay:${orderId}`);
+      setQrDataUrl(dataUrl);
+    } catch (error) {
+      console.error('Failed to generate QR code:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOrderData();
+  }, [fetchOrderData]);
+
+  useEffect(() => {
+    if (paymentInitiated && order) {
+      generateQR(order.id);
+    }
+  }, [paymentInitiated, order, generateQR]);
 
   const initializePayment = async () => {
     if (!paymentMethod) {

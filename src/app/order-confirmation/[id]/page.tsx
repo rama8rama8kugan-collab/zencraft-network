@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Container from '@/components/Container';
 import SectionTitle from '@/components/SectionTitle';
 import { motion } from 'framer-motion';
@@ -16,38 +16,35 @@ export default function OrderConfirmation() {
   const [loading, setLoading] = useState(true);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
 
-  useEffect(() => {
-    fetchOrder();
-  }, [params]);
-
-  useEffect(() => {
-    if (order?.invoiceUrl) {
-      generateQR();
-    }
-  }, [order]);
-
-  const generateQR = async () => {
+  const generateQR = useCallback(async (invoiceUrl: string) => {
     try {
-      const dataUrl = await QRCode.toDataURL(order.invoiceUrl);
+      const dataUrl = await QRCode.toDataURL(invoiceUrl);
       setQrDataUrl(dataUrl);
     } catch (error) {
       console.error('Failed to generate QR code:', error);
     }
-  };
+  }, []);
 
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async () => {
     try {
       const response = await fetch(`/api/orders/${params.id}`);
       if (!response.ok) throw new Error('Order not found');
       const data = await response.json();
       setOrder(data.order);
+      if (data.order?.invoiceUrl) {
+        generateQR(data.order.invoiceUrl);
+      }
     } catch (error) {
       toast.error('Failed to load order');
       router.push('/profile');
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id, router, generateQR]);
+
+  useEffect(() => {
+    fetchOrder();
+  }, [fetchOrder]);
 
   const downloadInvoice = async () => {
     if (!order) return;
