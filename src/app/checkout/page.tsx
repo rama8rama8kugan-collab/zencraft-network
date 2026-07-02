@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Container from '@/components/Container';
 import SectionTitle from '@/components/SectionTitle';
 import { motion } from 'framer-motion';
-import QRCode from 'qrcode.react';
+import QRCode from 'qrcode';
 import toast from 'react-hot-toast';
 
 type PaymentMethod = 'UPI' | 'GOOGLE_PAY' | 'PHONE_PE' | 'PAYTM' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'NET_BANKING' | null;
@@ -17,10 +17,26 @@ export default function Checkout() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [paymentInitiated, setPaymentInitiated] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string>('');
 
   useEffect(() => {
     fetchOrderData();
   }, []);
+
+  useEffect(() => {
+    if (paymentInitiated && order) {
+      generateQR();
+    }
+  }, [paymentInitiated, order]);
+
+  const generateQR = async () => {
+    try {
+      const dataUrl = await QRCode.toDataURL(`razorpay:${order.id}`);
+      setQrDataUrl(dataUrl);
+    } catch (error) {
+      console.error('Failed to generate QR code:', error);
+    }
+  };
 
   const fetchOrderData = async () => {
     try {
@@ -176,14 +192,14 @@ export default function Checkout() {
               ))}
             </div>
 
-            {paymentInitiated && paymentMethod && (
+            {paymentInitiated && paymentMethod && qrDataUrl && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="bg-accent-emerald/10 border border-accent-emerald/30 rounded-lg p-6 mb-6 text-center"
               >
                 <p className="text-accent-emerald font-semibold mb-4">Payment Initiated</p>
-                <QRCode value={`razorpay:${order.id}`} size={200} className="mx-auto" />
+                <img src={qrDataUrl} alt="Payment QR Code" className="mx-auto" style={{ width: '200px', height: '200px' }} />
                 <p className="text-sm text-gray-400 mt-4">Scan this QR code to complete payment</p>
               </motion.div>
             )}
