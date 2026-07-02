@@ -5,7 +5,7 @@ import { getUserFromToken } from "@/lib/auth";
 // DELETE a cart item by ID
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const user = await getUserFromToken(request);
@@ -13,10 +13,10 @@ export async function DELETE(
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = context.params;
 
     await prisma.cartItem.delete({
-      where: { id }, // ✅ keep as string
+      where: { id }, // keep as string
     });
 
     return NextResponse.json({ success: true });
@@ -29,7 +29,7 @@ export async function DELETE(
 // PATCH (update) a cart item by ID
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const user = await getUserFromToken(request);
@@ -37,11 +37,11 @@ export async function PATCH(
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = context.params;
     const { quantity } = await request.json();
 
     await prisma.cartItem.update({
-      where: { id }, // ✅ keep as string
+      where: { id }, // keep as string
       data: { quantity },
     });
 
