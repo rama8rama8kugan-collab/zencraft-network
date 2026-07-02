@@ -13,10 +13,10 @@ export async function DELETE(
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const { id } = params; // ✅ removed unnecessary `await`
+    const { id } = params;
 
     await prisma.cartItem.delete({
-      where: { id: Number(id) }, // use Number(id) if your schema defines id as Int
+      where: { id }, // ✅ keep as string
     });
 
     return NextResponse.json({ success: true });
@@ -37,11 +37,11 @@ export async function PATCH(
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const { id } = params; // ✅ removed unnecessary `await`
+    const { id } = params;
     const { quantity } = await request.json();
 
     await prisma.cartItem.update({
-      where: { id: Number(id) }, // convert if schema uses Int
+      where: { id }, // ✅ keep as string
       data: { quantity },
     });
 
