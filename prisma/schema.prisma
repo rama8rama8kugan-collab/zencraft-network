@@ -25,9 +25,8 @@ model User {
   updatedAt         DateTime  @updatedAt
   
   // Relations
-  purchases         Purchase[]
-  cart              CartItem[]
   orders            Order[]
+  cart              CartItem[]
   rank              UserRank?
   inventory         Inventory[]
   profile           UserProfile?
